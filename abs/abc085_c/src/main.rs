@@ -6,18 +6,20 @@ fn main() {
         .split_whitespace()
         .map(|x| x.parse::<usize>().unwrap())
         .collect();
+
     let n = nums[0];
     let amount = nums[1];
+    let i_max = if n > (amount / 10_000) { amount / 10_000 } else { n };
+    let j_max = if n > (amount /  5_000) { amount /  5_000 } else { n };
 
-    for i in 0..(n + 1) {
-        for j in 0..(n + 1) {
+    for i in (0..i_max + 1).rev() {
+        for j in (0..j_max + 1).rev() {
             if n >= i + j {
                 let k = n - i - j;
-                let nums = vec![i, j, k];
                 // DEBUG
-                // println!("{:?}", &nums);
-                if sum(&nums) == amount {
-                    println!("{} {} {}", &nums[0], &nums[1], &nums[2]);
+                // println!("{} {} {}", i, j, k);
+                if sum(i, j, k) == amount {
+                    println!("{} {} {}", i, j, k);
                     return;
                 }
             }
@@ -27,6 +29,6 @@ fn main() {
     println!("-1 -1 -1");
 }
 
-fn sum(nums: &Vec<usize>) -> usize {
-    nums[0] * 10_000 + nums[1] * 5_000 + nums[2] * 1_000
+fn sum(i: usize, j: usize, k: usize) -> usize {
+    i * 10_000 + j * 5_000 + k * 1_000
 }
