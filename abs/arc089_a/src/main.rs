@@ -3,7 +3,7 @@ use std::io::BufRead;
 fn main() {
     let stdin = std::io::stdin();
     let lines: Vec<String> = stdin.lock().lines().map(|x| x.unwrap()).collect();
-    let n = lines[0].parse::<isize>().unwrap();
+
     // [[t1, x1, y1], [t2, x2, y2]]
     let routes: Vec<Vec<_>> = lines[1..]
         .iter()
