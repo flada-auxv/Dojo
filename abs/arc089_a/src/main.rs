@@ -13,23 +13,21 @@ fn main() {
                 .collect()
         })
         .collect();
-
-    let current_location = vec![0,0];
-
-    // for route in routes {
-    //     if is_reachable_to_next_point(&route, &current_location) {
-
-    //     } else {
-    //         println!("No");
-    //     }
-    // }
-    // println!("Yes")
-
-    // if steps(routes, current_location) > n {
-    //     println!("No");
-    // }
 }
 
+fn is_reachable(routes: Vec<Vec<isize>>) -> bool {
+    let mut current_location = vec![0, 0];
+
+    for route in routes {
+        if is_reachable_to_next_point(&route, &current_location) {
+            current_location = route[1..=2].to_vec();
+        } else {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 fn is_reachable_to_next_point(route: &Vec<isize>, current_location: &Vec<isize>) -> bool {
     distance(current_location, &route[1..=2].to_vec()) <= route[0]
@@ -80,5 +78,24 @@ mod tests {
         let from = &vec![4, 4];
         let route = &vec![4, 2, 2];
         assert_eq!(is_reachable_to_next_point(route, from), true);
+    }
+
+    #[test]
+    fn test_is_reachable_1() {
+        let routes = vec![vec![3, 1, 2], vec![6, 1, 1]];
+        assert_eq!(is_reachable(routes), true);
+    }
+
+    #[test]
+    fn test_is_reachable_2() {
+        let routes = vec![vec![2, 100, 100]];
+        assert_eq!(is_reachable(routes), false);
+    }
+
+    // this test hasn't passed yet!
+    #[test]
+    fn test_is_reachable_3() {
+        let routes = vec![vec![5, 1, 1], vec![100, 1, 1]];
+        assert_eq!(is_reachable(routes), false);
     }
 }
