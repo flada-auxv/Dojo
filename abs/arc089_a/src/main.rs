@@ -26,7 +26,7 @@ fn is_reachable(routes: Vec<Vec<isize>>) -> bool {
 
     for route in routes {
         if is_reachable_to_next_point(&route, &current_location) {
-            current_location = route[1..=2].to_vec();
+            current_location = route[1..3].to_vec();
         } else {
             return false;
         }
@@ -37,7 +37,7 @@ fn is_reachable(routes: Vec<Vec<isize>>) -> bool {
 
 fn is_reachable_to_next_point(route: &Vec<isize>, current_location: &Vec<isize>) -> bool {
     let steps = route[0];
-    let min_steps = distance(current_location, &route[1..=2].to_vec());
+    let min_steps = distance(current_location, &route[1..3].to_vec());
 
     if steps == min_steps {
         return true
