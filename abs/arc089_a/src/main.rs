@@ -37,20 +37,24 @@ fn is_reachable(routes: Vec<Vec<isize>>) -> bool {
     return true;
 }
 
-fn is_reachable_to_next_point(route: &Vec<isize>, current_location: &Vec<isize>, current_steps_count: isize) -> bool {
+fn is_reachable_to_next_point(
+    route: &Vec<isize>,
+    current_location: &Vec<isize>,
+    current_steps_count: isize,
+) -> bool {
     let arrival_steps_count = route[0];
     if current_steps_count >= arrival_steps_count {
-        return false
+        return false;
     }
 
     let rest_steps = (current_steps_count - arrival_steps_count).abs();
     let min_steps = distance(current_location, &route[1..3].to_vec());
 
     if min_steps > rest_steps || min_steps % 2 != rest_steps % 2 {
-        return false
+        return false;
     }
 
-    return true
+    return true;
 }
 
 fn distance(from: &Vec<isize>, to: &Vec<isize>) -> isize {
@@ -115,6 +119,13 @@ mod tests {
     }
 
     #[test]
+    fn test_is_reachable_to_next_point_6() {
+        let from = &vec![0, 0];
+        let route = &vec![1, 0, 0];
+        assert_eq!(is_reachable_to_next_point(route, from, 0), false);
+    }
+
+    #[test]
     fn test_is_reachable_1() {
         let routes = vec![vec![3, 1, 2], vec![6, 1, 1]];
         assert_eq!(is_reachable(routes), true);
@@ -130,5 +141,11 @@ mod tests {
     fn test_is_reachable_3() {
         let routes = vec![vec![5, 1, 1], vec![100, 1, 1]];
         assert_eq!(is_reachable(routes), false);
+    }
+
+    #[test]
+    fn test_is_reachable_4() {
+        let routes = vec![vec![4, 2, 2], vec![8, 1, 3], vec![16, 3, 1]];
+        assert_eq!(is_reachable(routes), true);
     }
 }
