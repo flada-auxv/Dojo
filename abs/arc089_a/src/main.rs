@@ -40,11 +40,11 @@ fn is_reachable_to_next_point(route: &Vec<isize>, current_location: &Vec<isize>)
     let min_steps = distance(current_location, &route[1..3].to_vec());
 
     if steps == min_steps {
-        return true
+        return true;
     } else if steps % 4 == min_steps {
-        return true
+        return true;
     } else {
-        return false
+        return false;
     }
 }
 
