@@ -13,6 +13,12 @@ fn main() {
                 .collect()
         })
         .collect();
+
+    if is_reachable(routes) {
+        println!("Yes")
+    } else {
+        println!("No")
+    }
 }
 
 fn is_reachable(routes: Vec<Vec<isize>>) -> bool {
@@ -108,7 +114,6 @@ mod tests {
         assert_eq!(is_reachable(routes), false);
     }
 
-    // this test hasn't passed yet!
     #[test]
     fn test_is_reachable_3() {
         let routes = vec![vec![5, 1, 1], vec![100, 1, 1]];
