@@ -30,7 +30,16 @@ fn is_reachable(routes: Vec<Vec<isize>>) -> bool {
 }
 
 fn is_reachable_to_next_point(route: &Vec<isize>, current_location: &Vec<isize>) -> bool {
-    distance(current_location, &route[1..=2].to_vec()) <= route[0]
+    let steps = route[0];
+    let min_steps = distance(current_location, &route[1..=2].to_vec());
+
+    if steps == min_steps {
+        return true
+    } else if steps % 4 == min_steps {
+        return true
+    } else {
+        return false
+    }
 }
 
 fn distance(from: &Vec<isize>, to: &Vec<isize>) -> isize {
@@ -75,6 +84,13 @@ mod tests {
 
     #[test]
     fn test_is_reachable_to_next_point_3() {
+        let from = &vec![0, 0];
+        let route = &vec![5, 0, 1];
+        assert_eq!(is_reachable_to_next_point(route, from), true);
+    }
+
+    #[test]
+    fn test_is_reachable_to_next_point_4() {
         let from = &vec![4, 4];
         let route = &vec![4, 2, 2];
         assert_eq!(is_reachable_to_next_point(route, from), true);
