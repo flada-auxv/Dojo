@@ -1,0 +1,13 @@
+[package]
+name = "As_Far_Land_as_Possible"
+version = "0.1.0"
+authors = ["flada-auxv <aseknock@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[lib]
+name = "As_Far_Land_as_Possible"
+path = "lib.rs"
