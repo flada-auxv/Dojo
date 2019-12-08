@@ -22,7 +22,7 @@ func generate(numRows int) [][]int {
 		for col := 0; col < level+1; col++ {
 			num := 0
 
-			if col-1 < 0 {
+			if col == 0 {
 				// fmt.Printf("[left edge]level: %v, col: %v\n", level, col)
 				num = num + result[level-1][col]
 			} else if col == level {
