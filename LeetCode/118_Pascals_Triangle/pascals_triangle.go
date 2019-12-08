@@ -6,5 +6,11 @@ func Generate(numRows int) [][]int {
 }
 
 func generate(numRows int) [][]int {
-	return [][]int{[]int{1}}
+	var result [][]int
+
+	for i := 0; i < numRows; i++ {
+		result = append(result, []int{1})
+	}
+
+	return result
 }
