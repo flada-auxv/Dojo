@@ -20,12 +20,32 @@ module MT
   end
 
   class Node
-    attr_accessor :parent, :left, :right
+    attr_accessor :value, :parent, :left, :right
 
-    def initialize(parent: nil, left: nil, right: nil)
+    def initialize(value:, parent: nil, left: nil, right: nil)
+      @value = value
       @parent = parent
       @left = left
       @right = right
+    end
+
+    def hash
+      OpenSSL::Digest::SHA256(@value)
+    end
+
+    def root?
+      true
+    end
+
+    def add(node, to:)
+      case to.to_sym
+      when :left
+        @left = node
+      when :right
+        @right = node
+      else
+        raise ArgumentError
+      end
     end
   end
 end
