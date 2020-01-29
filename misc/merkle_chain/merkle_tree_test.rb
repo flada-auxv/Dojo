@@ -5,12 +5,15 @@ require_relative './merkle_tree'
 
 class TestMerkleTree < Minitest::Test
   def setup
-    elements = [1, 2, 3, 4, 5]
+    elements = %w[1 2 3 4 5]
     @merkle_tree = MT::MerkleTree.new(elements)
   end
 
   def test_initialize
-    assert_equal([1, 2, 3, 4, 5], MT::MerkleTree.new([1, 2, 3, 4, 5]).elements)
+    assert_equal(%w[1 2 3 4 5], MT::MerkleTree.new(%w[1 2 3 4 5]).elements)
+
+    assert_raises(ArgumentError) { MT::MerkleTree.new([]) }
+    assert_raises(ArgumentError) { MT::MerkleTree.new([1]) }
   end
 
   def test_verify
@@ -28,6 +31,34 @@ class TestMerkleTree < Minitest::Test
   def test_proof
     expected = ['4', '1+2', '5']
     assert_equal(expected, @merkle_tree.proof(target_value: 3))
+  end
+
+  def test_root_hash
+    assert_equal('1', @merkle_tree.root_hash)
+  end
+
+  def test_split_index
+    assert_equal(0, MT::MerkleTree.new(%w[1 2]).split_index)
+    assert_equal(1, MT::MerkleTree.new(%w[1 2 3]).split_index)
+    assert_equal(1, MT::MerkleTree.new(%w[1 2 3 4]).split_index)
+    assert_equal(3, MT::MerkleTree.new(%w[1 2 3 4 5]).split_index)
+    assert_equal(7, MT::MerkleTree.new(%w[1 2 3 4 5 6 7 8 9]).split_index)
+  end
+
+  def test_split_by_power_of_two
+    assert_equal(
+      [%w[1], %w[2]],
+      MT::MerkleTree.new(%w[1 2]).split_by_power_of_two
+    )
+    assert_equal(
+      [%w[1 2], %w[3]],
+      MT::MerkleTree.new(%w[1 2 3]).split_by_power_of_two
+    )
+
+    assert_equal(
+      [%w[1 2 3 4 5 6 7 8], %w[9]],
+      MT::MerkleTree.new(%w[1 2 3 4 5 6 7 8 9]).split_by_power_of_two
+    )
   end
 end
 
