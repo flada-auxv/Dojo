@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module MT
-  class MerkleTree
+  class Tree
     attr_reader :elements
 
     def initialize(elements = [])
