@@ -29,28 +29,43 @@ module MT
     end
 
     def build_tree
-      left, right = split_by_power_of_two
-      @root = Node.new
-      @root.add_left(left)
-      @root.add_right(right)
-      @root.traverse_down
+
     end
 
-    # the largest powers of two less than the number of elements
-    def split_index
-      binary_length = (@elements.length - 1).to_s(2).length
-      @split_index ||= 2**(binary_length - 1) - 1
-    end
-
-    def split_by_power_of_two
-      [@elements[0..split_index], @elements[split_index+1..]]
-    end
   end
 
   class Node
     attr_accessor :value, :parent, :left, :right
 
-    def initialize(value:, parent: nil, left: nil, right: nil)
+    class << self
+      def build_as_root_of(elements)
+        return new(value: elements[0]) if elements.length == 1
+
+        left, right = split_by_power_of_two(elements)
+
+        left_root = build_as_root_of(left)
+        right_root = build_as_root_of(right)
+
+        parent = new(left: left_root, right: right_root)
+
+        left_root.parent = parent
+        right_root.parent = parent
+      end
+
+      def split_by_power_of_two(elements)
+        idx = split_index(elements)
+        [elements[0..idx], elements[idx+1..]]
+      end
+
+      # the largest powers of two less than the number of elements
+      def split_index(elements)
+        binary_length = (elements.length - 1).to_s(2).length
+        2**(binary_length - 1) - 1
+      end
+
+    end
+
+    def initialize(value: nil, parent: nil, left: nil, right: nil)
       @value = value
       @parent = parent
       @left = left
@@ -64,16 +79,15 @@ module MT
 
     def inner_hash
       return nil unless @left && @right
-
-      "#{@left}+#{@right}"
+      "(#{@left}+#{@right})"
     end
 
     def root?
-      true
+      !leaf? && @parent.nil?
     end
 
     def leaf?
-      true
+      !!@value
     end
 
     def add(node, to:)
@@ -94,5 +108,11 @@ module MT
     def add_right(node)
       add(node, to: :right)
     end
+
+    def to_s
+      leaf? ? value.to_s : inner_hash
+    end
+
+    alias inspect to_s
   end
 end
