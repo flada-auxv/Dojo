@@ -84,7 +84,7 @@ module MT
       raise StandardError if @left.nil?
 
       val =
-        if @left && @right
+        if @right
           @left.hashed_value + @right.hashed_value
         else
           @left.hashed_value
