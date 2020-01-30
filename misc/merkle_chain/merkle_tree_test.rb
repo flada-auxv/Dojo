@@ -3,15 +3,17 @@
 require 'minitest/autorun'
 require_relative './merkle_tree'
 
+def sha256(*val)
+  OpenSSL::Digest::SHA256.hexdigest(Array(val).map(&:to_s).reduce(&:+))
+end
+
 class TestTree < Minitest::Test
   def setup
-    elements = %w[1 2 3 4 5]
+    elements = [sha256(1), sha256(2), sha256(3), sha256(4), sha256(5)]
     @merkle_tree = MT::Tree.new(elements)
   end
 
   def test_initialize
-    assert_equal(%w[1 2 3 4 5], MT::Tree.new(%w[1 2 3 4 5]).elements)
-
     assert_raises(ArgumentError) { MT::Tree.new([]) }
     assert_raises(ArgumentError) { MT::Tree.new([1]) }
   end
@@ -34,37 +36,88 @@ class TestTree < Minitest::Test
   end
 
   def test_root_hash
-    assert_equal('1', @merkle_tree.root_hash)
+    # 1,2,3,4,5のhash化されたデータをソートして入力とするので、h(4),h(3),h(1),h(2),h(5) の順番に並ぶことになる
+    # %w(1 2 3 4 5).map {|a| [a, OpenSSL::Digest::SHA256.hexdigest(a)] }.sort_by{|(a, b)| b }
+    # => [["4", "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a"],
+    #     ["3", "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"],
+    #     ["1", "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"],
+    #     ["2", "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"],
+    #     ["5", "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d"]]
+    #
+    #    ((4+3)+(1+2))+5
+    #        /          \
+    #   (4+3)+(1+2)      5
+    #    /       \
+    #   4+3     1+2
+    #  /   \   /   \
+    # 4     3 1     2
+
+    assert_equal(
+      sha256(
+        sha256(
+          sha256(
+            sha256(4),
+            sha256(3)
+          ),
+          sha256(
+            sha256(1),
+            sha256(2)
+          )
+        ),
+        sha256(5)
+      ),
+      @merkle_tree.root_hash
+    )
+  end
+
+  def test_split_index
+    assert_equal(0, MT::Tree.split_index(%w[1 2]))
+    assert_equal(1, MT::Tree.split_index(%w[1 2 3]))
+    assert_equal(1, MT::Tree.split_index(%w[1 2 3 4]))
+    assert_equal(3, MT::Tree.split_index(%w[1 2 3 4 5]))
+    assert_equal(7, MT::Tree.split_index(%w[1 2 3 4 5 6 7 8 9]))
+  end
+
+  def test_split_by_power_of_two
+    assert_equal(
+      [%w[1], %w[2]],
+      MT::Tree.split_by_power_of_two(%w[1 2])
+    )
+    assert_equal(
+      [%w[1 2], %w[3]],
+      MT::Tree.split_by_power_of_two(%w[1 2 3])
+    )
+
+    assert_equal(
+      [%w[1 2 3 4 5 6 7 8], %w[9]],
+      MT::Tree.split_by_power_of_two(%w[1 2 3 4 5 6 7 8 9])
+    )
+  end
+
+  def test_build_root_node_of
+    root = MT::Tree.build_root_node_of(%w[1 2 3])
+
+    assert_equal(true,  root.root?)
+    assert_equal(true,  root.parent.nil?)
+
+    assert_equal(true,  root.left.intermediate?)
+    assert_equal(false, root.left.leaf?)
+
+    assert_equal(false, root.right.intermediate?)
+    assert_equal(true,  root.right.leaf?)
+    assert_equal(true,  root.right.left.nil?)
+    assert_equal(true,  root.right.right.nil?)
+
+    assert_equal(false, root.left.left.intermediate?)
+    assert_equal(true,  root.left.left.leaf?)
+    assert_equal(true,  root.left.left.left.nil?)
+    assert_equal(true,  root.left.left.right.nil?)
   end
 end
 
 class TestMerkleNode < Minitest::Test
   def setup
     @root = MT::Node.new(value: 1)
-  end
-
-  def test_split_index
-    assert_equal(0, MT::Node.split_index(%w[1 2]))
-    assert_equal(1, MT::Node.split_index(%w[1 2 3]))
-    assert_equal(1, MT::Node.split_index(%w[1 2 3 4]))
-    assert_equal(3, MT::Node.split_index(%w[1 2 3 4 5]))
-    assert_equal(7, MT::Node.split_index(%w[1 2 3 4 5 6 7 8 9]))
-  end
-
-  def test_split_by_power_of_two
-    assert_equal(
-      [%w[1], %w[2]],
-      MT::Node.split_by_power_of_two(%w[1 2])
-    )
-    assert_equal(
-      [%w[1 2], %w[3]],
-      MT::Node.split_by_power_of_two(%w[1 2 3])
-    )
-
-    assert_equal(
-      [%w[1 2 3 4 5 6 7 8], %w[9]],
-      MT::Node.split_by_power_of_two(%w[1 2 3 4 5 6 7 8 9])
-    )
   end
 
   def test_add
@@ -79,12 +132,11 @@ class TestMerkleNode < Minitest::Test
     assert_equal(true, MT::Node.new.root?)
   end
 
-  def test_inner_hash
-    node = MT::Node.new(
-      value: 1,
-      left: MT::Node.new(value: 2),
-      right: MT::Node.new(value: 3)
+  def test_hashed_value
+    node = MT::Node.build_as_intermediate_node(
+      left: MT::Node.build_as_leaf_node(value: sha256(2)),
+      right: MT::Node.new(value: sha256(3))
     )
-    assert_equal('2+3', node.inner_hash)
+    assert_equal(sha256(sha256(2) + sha256(3)), node.hashed_value)
   end
 end

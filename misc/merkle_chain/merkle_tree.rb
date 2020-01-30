@@ -1,21 +1,50 @@
 # frozen_string_literal: true
 
+require 'openssl'
+
 module MT
   class Tree
-    attr_reader :elements
+    attr_reader :values
 
-    def initialize(elements = [])
-      raise ArgumentError if elements.length < 2
+    class << self
+      def build_root_node_of(values)
+        return Node.build_as_leaf_node(value: values[0]) if values.length == 1
 
-      @elements = elements
+        left, right = split_by_power_of_two(values)
 
-      build_tree
+        left_root = build_root_node_of(left)
+        right_root = build_root_node_of(right)
+
+        parent = Node.build_as_intermediate_node(left: left_root, right: right_root)
+
+        left_root.parent = parent
+        right_root.parent = parent
+
+        parent
+      end
+
+      def split_by_power_of_two(values)
+        idx = split_index(values)
+        [values[0..idx], values[idx+1..]]
+      end
+
+      # the largest powers of two less than the number of values
+      def split_index(values)
+        binary_length = (values.length - 1).to_s(2).length
+        2**(binary_length - 1) - 1
+      end
+    end
+
+    def initialize(values = [])
+      raise ArgumentError if values.length < 2
+
+      i = 0 # for stable-sort
+      @values = values.sort_by {|v| [v, i += 1] }
+      @root   = self.class.build_root_node_of(@values)
     end
 
     def root_hash
-      return @root.leaf_hash if @elements.length == 1
-
-      @root.inner_hash
+      @root.hashed_value
     end
 
     def proof(target_value:)
@@ -27,42 +56,19 @@ module MT
 
       false
     end
-
-    def build_tree
-
-    end
-
   end
 
   class Node
     attr_accessor :value, :parent, :left, :right
 
     class << self
-      def build_as_root_of(elements)
-        return new(value: elements[0]) if elements.length == 1
-
-        left, right = split_by_power_of_two(elements)
-
-        left_root = build_as_root_of(left)
-        right_root = build_as_root_of(right)
-
-        parent = new(left: left_root, right: right_root)
-
-        left_root.parent = parent
-        right_root.parent = parent
+      def build_as_leaf_node(value:)
+        new(value: value)
       end
 
-      def split_by_power_of_two(elements)
-        idx = split_index(elements)
-        [elements[0..idx], elements[idx+1..]]
+      def build_as_intermediate_node(left:, right:)
+        new(left: left, right: right)
       end
-
-      # the largest powers of two less than the number of elements
-      def split_index(elements)
-        binary_length = (elements.length - 1).to_s(2).length
-        2**(binary_length - 1) - 1
-      end
-
     end
 
     def initialize(value: nil, parent: nil, left: nil, right: nil)
@@ -72,18 +78,27 @@ module MT
       @right = right
     end
 
-    def leaf_hash
-      # OpenSSL::Digest::SHA256.hexdigest(@value.to_s)
-      @value
-    end
+    def hashed_value
+      return @value if leaf?
 
-    def inner_hash
-      return nil unless @left && @right
-      "(#{@left}+#{@right})"
+      raise StandardError if @left.nil?
+
+      val =
+        if @left && @right
+          @left.hashed_value + @right.hashed_value
+        else
+          @left.hashed_value
+        end
+
+      OpenSSL::Digest::SHA256.hexdigest(val)
     end
 
     def root?
       !leaf? && @parent.nil?
+    end
+
+    def intermediate?
+      !leaf? && !@parent.nil?
     end
 
     def leaf?
@@ -110,9 +125,9 @@ module MT
     end
 
     def to_s
-      leaf? ? value.to_s : inner_hash
+      leaf? ? @value.to_s : hashed_value
     end
 
-    alias inspect to_s
+    # alias inspect to_s
   end
 end
