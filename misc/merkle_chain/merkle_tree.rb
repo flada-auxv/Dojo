@@ -72,10 +72,10 @@ module MT
     end
 
     def initialize(value: nil, parent: nil, left: nil, right: nil)
-      @value = value
+      @value  = value
       @parent = parent
-      @left = left
-      @right = right
+      @left   = left
+      @right  = right
     end
 
     def hashed_value
