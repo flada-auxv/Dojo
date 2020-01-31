@@ -4,23 +4,28 @@ require 'openssl'
 
 module MT
   class Tree
-    attr_reader :values
+    attr_reader :root, :leaves, :values
 
     class << self
       def build_root_node_of(values)
-        return Node.build_as_leaf_node(value: values[0]) if values.length == 1
+        if values.length == 1
+          leaf = Node.build_as_leaf_node(value: values[0])
+          return leaf, [leaf]
+        end
 
         left, right = split_by_power_of_two(values)
 
-        left_root = build_root_node_of(left)
-        right_root = build_root_node_of(right)
+        left_root, left_nodes = build_root_node_of(left)
+        right_root, right_nodes = build_root_node_of(right)
 
         parent = Node.build_as_intermediate_node(left: left_root, right: right_root)
 
-        left_root.parent = parent
-        right_root.parent = parent
+        left_root.parent   = parent
+        left_root.sibling  = right_root
+        right_root.parent  = parent
+        right_root.sibling = left_root
 
-        parent
+        [parent, left_nodes + right_nodes]
       end
 
       def split_by_power_of_two(values)
@@ -40,15 +45,24 @@ module MT
 
       i = 0 # for stable-sort
       @values = values.sort_by {|v| [v, i += 1] }
-      @root   = self.class.build_root_node_of(@values)
+      @root, @leaves = self.class.build_root_node_of(@values)
     end
 
     def root_hash
       @root.hashed_value
     end
 
-    def proof(target_value:)
-      ['4', '1+2', '5']
+    def proof(to:)
+      leaf = @leaves.find {|l| l.hashed_value == to }
+
+      return nil if leaf.nil?
+
+      res = []
+      while leaf.parent
+        res << leaf.sibling
+        leaf = leaf.parent
+      end
+      res
     end
 
     def verify(target_value:, proof:)
@@ -59,7 +73,7 @@ module MT
   end
 
   class Node
-    attr_accessor :value, :parent, :left, :right
+    attr_accessor :value, :left, :right, :parent, :sibling
 
     class << self
       def build_as_leaf_node(value:)
@@ -71,9 +85,8 @@ module MT
       end
     end
 
-    def initialize(value: nil, parent: nil, left: nil, right: nil)
+    def initialize(value: nil, left: nil, right: nil)
       @value  = value
-      @parent = parent
       @left   = left
       @right  = right
     end

@@ -3,13 +3,13 @@
 require 'minitest/autorun'
 require_relative './merkle_tree'
 
-def sha256(*val)
+def h(*val)
   OpenSSL::Digest::SHA256.hexdigest(Array(val).map(&:to_s).reduce(&:+))
 end
 
 class TestTree < Minitest::Test
   def setup
-    elements = [sha256(1), sha256(2), sha256(3), sha256(4), sha256(5)]
+    elements = [h(1), h(2), h(3), h(4), h(5)]
     @merkle_tree = MT::Tree.new(elements)
   end
 
@@ -19,7 +19,7 @@ class TestTree < Minitest::Test
   end
 
   def test_verify
-    proof = @merkle_tree.proof(target_value: 3)
+    proof = @merkle_tree.proof(to: 3)
     assert_equal(
       true,
       @merkle_tree.verify(target_value: 3, proof: proof)
@@ -31,8 +31,8 @@ class TestTree < Minitest::Test
   end
 
   def test_proof
-    expected = ['4', '1+2', '5']
-    assert_equal(expected, @merkle_tree.proof(target_value: 3))
+    expected = [h('4'), h(h('1') + h('2')), h('5')]
+    assert_equal(expected, @merkle_tree.proof(to: h('3')).map(&:hashed_value))
   end
 
   def test_root_hash
@@ -53,18 +53,12 @@ class TestTree < Minitest::Test
     # 4     3 1     2
 
     assert_equal(
-      sha256(
-        sha256(
-          sha256(
-            sha256(4),
-            sha256(3)
-          ),
-          sha256(
-            sha256(1),
-            sha256(2)
-          )
+      h(
+        h(
+          h(h(4), h(3)),
+          h(h(1), h(2))
         ),
-        sha256(5)
+        h(5)
       ),
       @merkle_tree.root_hash
     )
@@ -95,7 +89,7 @@ class TestTree < Minitest::Test
   end
 
   def test_build_root_node_of
-    root = MT::Tree.build_root_node_of(%w[1 2 3])
+    root, leaves = MT::Tree.build_root_node_of(%w[1 2 3])
 
     assert_equal(true,  root.root?)
     assert_equal(true,  root.parent.nil?)
@@ -112,6 +106,8 @@ class TestTree < Minitest::Test
     assert_equal(true,  root.left.left.leaf?)
     assert_equal(true,  root.left.left.left.nil?)
     assert_equal(true,  root.left.left.right.nil?)
+
+    assert_equal(%w[1 2 3], leaves.map(&:hashed_value))
   end
 end
 
@@ -134,9 +130,9 @@ class TestMerkleNode < Minitest::Test
 
   def test_hashed_value
     node = MT::Node.build_as_intermediate_node(
-      left: MT::Node.build_as_leaf_node(value: sha256(2)),
-      right: MT::Node.new(value: sha256(3))
+      left: MT::Node.build_as_leaf_node(value: h(2)),
+      right: MT::Node.new(value: h(3))
     )
-    assert_equal(sha256(sha256(2) + sha256(3)), node.hashed_value)
+    assert_equal(h(h(2) + h(3)), node.hashed_value)
   end
 end
