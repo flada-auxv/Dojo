@@ -19,15 +19,9 @@ class TestTree < Minitest::Test
   end
 
   def test_verify
-    proof = @merkle_tree.proof(to: 3)
-    assert_equal(
-      true,
-      @merkle_tree.verify(target_value: 3, proof: proof)
-    )
-    assert_equal(
-      false,
-      @merkle_tree.verify(target_value: 4, proof: proof)
-    )
+    assert_equal(true,  @merkle_tree.verify(target_value: 3))
+    assert_equal(true,  @merkle_tree.verify(target_value: '3'))
+    assert_equal(false, @merkle_tree.verify(target_value: 6))
   end
 
   def test_proof

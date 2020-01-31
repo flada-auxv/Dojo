@@ -20,10 +20,10 @@ module MT
 
         parent = Node.build_as_intermediate_node(left: left_root, right: right_root)
 
-        left_root.parent   = parent
-        left_root.sibling  = right_root
-        right_root.parent  = parent
-        right_root.sibling = left_root
+        left_root.parent        = parent
+        left_root.right_sibling = right_root
+        right_root.parent       = parent
+        right_root.left_sibling = left_root
 
         [parent, left_nodes + right_nodes]
       end
@@ -71,15 +71,29 @@ module MT
       res
     end
 
-    def verify(target_value:, proof:)
-      return true if target_value == 3
+    def verify(target_value:)
+      return false if (prf = proof(to: target_value)).nil?
 
-      false
+      hashed = OpenSSL::Digest::SHA256.hexdigest(target_value.to_s)
+
+      result =
+        prf.reduce(hashed) do |res, node|
+          case
+          when node.left_sibling
+            res = OpenSSL::Digest::SHA256.hexdigest(res + node.value)
+          when node.right_sibling
+            res = OpenSSL::Digest::SHA256.hexdigest(node.value + res)
+          else
+            break
+          end
+        end
+
+      return result == root_hash
     end
   end
 
   class Node
-    attr_accessor :leaf_value, :left, :right, :parent, :sibling
+    attr_accessor :leaf_value, :left, :right, :parent, :left_sibling, :right_sibling
 
     class << self
       def build_as_leaf_node(leaf_value)
@@ -103,6 +117,10 @@ module MT
       raise StandardError if @left.nil?
 
       OpenSSL::Digest::SHA256.hexdigest([@left.value, @right.value].join)
+    end
+
+    def sibling
+      left_sibling || right_sibling
     end
 
     def root?
