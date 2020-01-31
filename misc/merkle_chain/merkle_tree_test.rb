@@ -9,7 +9,7 @@ end
 
 class TestTree < Minitest::Test
   def setup
-    elements = [h(1), h(2), h(3), h(4), h(5)]
+    elements = %w[1 2 3 4 5]
     @merkle_tree = MT::Tree.new(elements)
   end
 
@@ -32,7 +32,7 @@ class TestTree < Minitest::Test
 
   def test_proof
     expected = [h('4'), h(h('1') + h('2')), h('5')]
-    assert_equal(expected, @merkle_tree.proof(to: h('3')).map(&:hashed_value))
+    assert_equal(expected, @merkle_tree.proof(to: '3').map(&:value))
   end
 
   def test_root_hash
@@ -107,32 +107,32 @@ class TestTree < Minitest::Test
     assert_equal(true,  root.left.left.left.nil?)
     assert_equal(true,  root.left.left.right.nil?)
 
-    assert_equal(%w[1 2 3], leaves.map(&:hashed_value))
+    assert_equal(%w[1 2 3], leaves.map(&:value))
   end
 end
 
 class TestMerkleNode < Minitest::Test
   def setup
-    @root = MT::Node.new(value: 1)
+    @root = MT::Node.new(leaf_value: '1')
   end
 
   def test_add
-    root = MT::Node.new(value: 1)
-    left_child = MT::Node.new(value: 2)
+    root = MT::Node.new(leaf_value: '1')
+    left_child = MT::Node.new(leaf_value: '2')
     root.add(left_child, to: :left)
 
-    assert_equal(left_child.value, root.left.value)
+    assert_equal(left_child.leaf_value, root.left.leaf_value)
   end
 
   def test_root?
     assert_equal(true, MT::Node.new.root?)
   end
 
-  def test_hashed_value
+  def test_value
     node = MT::Node.build_as_intermediate_node(
-      left: MT::Node.build_as_leaf_node(value: h(2)),
-      right: MT::Node.new(value: h(3))
+      left: MT::Node.build_as_leaf_node(h(2)),
+      right: MT::Node.build_as_leaf_node(h(3))
     )
-    assert_equal(h(h(2) + h(3)), node.hashed_value)
+    assert_equal(h(h(2) + h(3)), node.value)
   end
 end

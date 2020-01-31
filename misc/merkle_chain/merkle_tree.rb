@@ -4,12 +4,12 @@ require 'openssl'
 
 module MT
   class Tree
-    attr_reader :root, :leaves, :values
+    attr_reader :root, :leaves, :entries
 
     class << self
       def build_root_node_of(values)
         if values.length == 1
-          leaf = Node.build_as_leaf_node(value: values[0])
+          leaf = Node.build_as_leaf_node(values[0])
           return leaf, [leaf]
         end
 
@@ -40,20 +40,26 @@ module MT
       end
     end
 
-    def initialize(values = [])
-      raise ArgumentError if values.length < 2
+    def initialize(entries = [])
+      raise ArgumentError if entries.length < 2
 
       i = 0 # for stable-sort
-      @values = values.sort_by {|v| [v, i += 1] }
-      @root, @leaves = self.class.build_root_node_of(@values)
+
+      @entries =
+        entries.
+          map {|e| OpenSSL::Digest::SHA256.hexdigest(e) }.
+          sort_by {|v| [v, i += 1] }
+
+      @root, @leaves = self.class.build_root_node_of(@entries)
     end
 
     def root_hash
-      @root.hashed_value
+      @root.value
     end
 
     def proof(to:)
-      leaf = @leaves.find {|l| l.hashed_value == to }
+      hashed = OpenSSL::Digest::SHA256.hexdigest(to.to_s)
+      leaf = @leaves.find {|l| l.value == hashed }
 
       return nil if leaf.nil?
 
@@ -73,11 +79,11 @@ module MT
   end
 
   class Node
-    attr_accessor :value, :left, :right, :parent, :sibling
+    attr_accessor :leaf_value, :left, :right, :parent, :sibling
 
     class << self
-      def build_as_leaf_node(value:)
-        new(value: value)
+      def build_as_leaf_node(leaf_value)
+        new(leaf_value: leaf_value)
       end
 
       def build_as_intermediate_node(left:, right:)
@@ -85,25 +91,18 @@ module MT
       end
     end
 
-    def initialize(value: nil, left: nil, right: nil)
-      @value  = value
-      @left   = left
-      @right  = right
+    def initialize(leaf_value: nil, left: nil, right: nil)
+      @leaf_value = leaf_value
+      @left       = left
+      @right      = right
     end
 
-    def hashed_value
-      return @value if leaf?
+    def value
+      return @leaf_value if leaf?
 
       raise StandardError if @left.nil?
 
-      val =
-        if @right
-          @left.hashed_value + @right.hashed_value
-        else
-          @left.hashed_value
-        end
-
-      OpenSSL::Digest::SHA256.hexdigest(val)
+      OpenSSL::Digest::SHA256.hexdigest([@left.value, @right.value].join)
     end
 
     def root?
@@ -115,7 +114,7 @@ module MT
     end
 
     def leaf?
-      !!@value
+      !!@leaf_value
     end
 
     def add(node, to:)
@@ -136,11 +135,5 @@ module MT
     def add_right(node)
       add(node, to: :right)
     end
-
-    def to_s
-      leaf? ? @value.to_s : hashed_value
-    end
-
-    # alias inspect to_s
   end
 end
