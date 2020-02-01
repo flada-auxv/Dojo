@@ -24,6 +24,9 @@ class TestTree < Minitest::Test
     assert_equal(expected, @tree.audit_proof(index: 1).map(&:value))
 
     assert_raises(ArgumentError) { @tree.audit_proof(index: 5) }
+
+    tree_of_single_leaf = MT::Tree.new(%w[1])
+    assert_equal([], tree_of_single_leaf.audit_proof(index: 0))
   end
 
   def test_root_hash
