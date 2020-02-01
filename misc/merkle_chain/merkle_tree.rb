@@ -71,10 +71,10 @@ module MT
       res
     end
 
-    def verify(target_value:)
-      return false if (prf = proof(target_value)).nil?
+    def verify(target)
+      return false if (prf = proof(target)).nil?
 
-      hashed = OpenSSL::Digest::SHA256.hexdigest(target_value.to_s)
+      hashed = OpenSSL::Digest::SHA256.hexdigest(target.to_s)
 
       result =
         prf.reduce(hashed) do |res, node|
