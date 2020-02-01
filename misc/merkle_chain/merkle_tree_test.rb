@@ -26,6 +26,7 @@ class TestTree < Minitest::Test
 
   def test_audit_proof_when_index_is_invalid
     assert_raises(ArgumentError) { @tree.audit_proof(index: 5) }
+    assert_raises(ArgumentError) { @tree.audit_proof(index: -1) }
   end
 
   def test_audit_proof_when_tree_contains_only_single_leaf

@@ -58,7 +58,7 @@ module MT
     end
 
     def audit_proof(index:)
-      if (leaf = @leaves[index]).nil?
+      if index.negative? || (leaf = @leaves[index]).nil?
         raise ArgumentError, 'Tree does not have a value you specified by index'
       end
 
