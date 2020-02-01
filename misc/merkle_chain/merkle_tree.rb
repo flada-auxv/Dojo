@@ -57,8 +57,8 @@ module MT
       @root.value
     end
 
-    def proof(to:)
-      hashed = OpenSSL::Digest::SHA256.hexdigest(to.to_s)
+    def proof(target)
+      hashed = OpenSSL::Digest::SHA256.hexdigest(target.to_s)
       leaf = @leaves.find {|l| l.value == hashed }
 
       return nil if leaf.nil?
@@ -72,7 +72,7 @@ module MT
     end
 
     def verify(target_value:)
-      return false if (prf = proof(to: target_value)).nil?
+      return false if (prf = proof(target_value)).nil?
 
       hashed = OpenSSL::Digest::SHA256.hexdigest(target_value.to_s)
 

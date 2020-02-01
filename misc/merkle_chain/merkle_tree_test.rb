@@ -13,11 +13,6 @@ class TestTree < Minitest::Test
     @merkle_tree = MT::Tree.new(elements)
   end
 
-  def test_initialize
-    assert_raises(ArgumentError) { MT::Tree.new([]) }
-    assert_raises(ArgumentError) { MT::Tree.new([1]) }
-  end
-
   def test_verify
     assert_equal(true,  @merkle_tree.verify(target_value: 3))
     assert_equal(true,  @merkle_tree.verify(target_value: '3'))
@@ -26,7 +21,7 @@ class TestTree < Minitest::Test
 
   def test_proof
     expected = [h('4'), h(h('1') + h('2')), h('5')]
-    assert_equal(expected, @merkle_tree.proof(to: '3').map(&:value))
+    assert_equal(expected, @merkle_tree.proof('3').map(&:value))
   end
 
   def test_root_hash
