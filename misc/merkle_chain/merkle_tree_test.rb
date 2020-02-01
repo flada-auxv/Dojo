@@ -10,18 +10,18 @@ end
 class TestTree < Minitest::Test
   def setup
     elements = %w[1 2 3 4 5]
-    @merkle_tree = MT::Tree.new(elements)
+    @tree = MT::Tree.new(elements)
   end
 
   def test_verify
-    assert_equal(true,  @merkle_tree.verify(target_value: 3))
-    assert_equal(true,  @merkle_tree.verify(target_value: '3'))
-    assert_equal(false, @merkle_tree.verify(target_value: 6))
+    assert_equal(true,  @tree.verify(target_value: 3))
+    assert_equal(true,  @tree.verify(target_value: '3'))
+    assert_equal(false, @tree.verify(target_value: 6))
   end
 
   def test_proof
     expected = [h('4'), h(h('1') + h('2')), h('5')]
-    assert_equal(expected, @merkle_tree.proof('3').map(&:value))
+    assert_equal(expected, @tree.proof('3').map(&:value))
   end
 
   def test_root_hash
@@ -49,7 +49,7 @@ class TestTree < Minitest::Test
         ),
         h(5)
       ),
-      @merkle_tree.root_hash
+      @tree.root_hash
     )
   end
 
