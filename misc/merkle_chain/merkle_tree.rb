@@ -70,6 +70,7 @@ module MT
       end
       res
     end
+    alias audit_paths proof
 
     def verify(target)
       return false if (prf = proof(target)).nil?
@@ -95,6 +96,8 @@ module MT
 
   class Node
     attr_accessor :leaf_value, :left, :right, :parent, :left_sibling, :right_sibling
+
+    LeafPrefix = ""
 
     class << self
       def build_as_leaf_node(leaf_value)
