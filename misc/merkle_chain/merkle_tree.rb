@@ -33,7 +33,7 @@ module MT
         [values[0..idx], values[idx+1..]]
       end
 
-      # the largest powers of two less than the number of values
+      # the largest power of two less than entries
       def split_index(values)
         binary_length = (values.length - 1).to_s(2).length
         2**(binary_length - 1) - 1
