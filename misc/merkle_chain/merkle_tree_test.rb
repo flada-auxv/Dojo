@@ -114,10 +114,22 @@ class TestMerkleNode < Minitest::Test
   end
 
   def test_value
-    node = MT::Node.build_as_intermediate_node(
-      left: MT::Node.build_as_leaf_node(h(2)),
-      right: MT::Node.build_as_leaf_node(h(3))
+    left_leaf  = MT::Node.build_as_leaf_node(h(2))
+    right_leaf = MT::Node.build_as_leaf_node(h(3))
+
+    assert_equal(h(2), left_leaf.value)
+    assert_equal(h(3), right_leaf.value)
+
+    node1 = MT::Node.build_as_intermediate_node(
+      left: left_leaf,
+      right: right_leaf
     )
-    assert_equal(h(h(2) + h(3)), node.value)
+    assert_equal(h(h(2) + h(3)), node1.value)
+
+    node2 = MT::Node.build_as_intermediate_node(
+      left: left_leaf,
+      right: nil
+    )
+    assert_equal(h(h(2)), node2.value)
   end
 end

@@ -117,7 +117,7 @@ module MT
 
       raise StandardError if @left.nil?
 
-      OpenSSL::Digest::SHA256.hexdigest([@left.value, @right.value].join)
+      OpenSSL::Digest::SHA256.hexdigest([@left&.value, @right&.value].join)
     end
 
     def sibling
