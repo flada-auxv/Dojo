@@ -101,10 +101,6 @@ class TestTree < Minitest::Test
 end
 
 class TestMerkleNode < Minitest::Test
-  def setup
-    @root = MT::Node.new(leaf_value: '1')
-  end
-
   def test_add
     root = MT::Node.new(leaf_value: '1')
     left_child = MT::Node.new(leaf_value: '2')
