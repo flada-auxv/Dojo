@@ -93,8 +93,8 @@ module MT
   end
 
   class Node
-    LEAF_PREFIX  = ["0"].pack("H*")
-    INNER_PREFIX = ["1"].pack("H*")
+    LEAF_PREFIX  = "\x00"
+    INNER_PREFIX = "\x01"
 
     attr_reader :original_value
     attr_accessor :leaf, :value, :left, :right, :parent, :left_sibling, :right_sibling
@@ -108,16 +108,20 @@ module MT
         new(leaf: false, left: left, right: right)
       end
 
+      def digest(*val)
+        OpenSSL::Digest::SHA256.hexdigest(val.join)
+      end
+
       def leaf_hash(value)
         digest(LEAF_PREFIX, value)
       end
 
       def inner_hash(left_value, right_value)
-        digest(INNER_PREFIX, left_value, right_value)
+        digest(INNER_PREFIX, str_to_byte(left_value), str_to_byte(right_value))
       end
 
-      def digest(*val)
-        OpenSSL::Digest::SHA256.digest(val.join)
+      def str_to_byte(val)
+        [val].pack('H*')
       end
     end
 
