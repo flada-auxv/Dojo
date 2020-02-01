@@ -90,6 +90,7 @@ module MT
 
       return result == root_hash
     end
+    alias include? verify
   end
 
   class Node
