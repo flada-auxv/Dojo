@@ -47,8 +47,8 @@ module MT
 
       @entries =
         entries.
-          map {|e| Node.build_as_leaf_node(e) }.
-          sort_by {|v| [v.value, i += 1] }
+          sort_by {|v| [v, i += 1] }.
+          map {|e| Node.build_as_leaf_node(e) }
 
       @root, @leaves = self.class.build_tree_of(@entries)
     end
