@@ -22,9 +22,13 @@ class TestTree < Minitest::Test
   def test_audit_proof
     expected = [h('4'), h(h('1') + h('2')), h('5')]
     assert_equal(expected, @tree.audit_proof(index: 1).map(&:value))
+  end
 
+  def test_audit_proof_when_index_is_invalid
     assert_raises(ArgumentError) { @tree.audit_proof(index: 5) }
+  end
 
+  def test_audit_proof_when_tree_contains_only_single_leaf
     tree_of_single_leaf = MT::Tree.new(%w[1])
     assert_equal([], tree_of_single_leaf.audit_proof(index: 0))
   end
