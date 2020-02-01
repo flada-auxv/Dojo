@@ -41,7 +41,7 @@ module MT
     end
 
     def initialize(entries = [])
-      raise ArgumentError if entries.length < 2
+      raise ArgumentError if entries.length < 1
 
       i = 0 # for stable-sort
 
