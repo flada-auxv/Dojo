@@ -13,15 +13,17 @@ class TestTree < Minitest::Test
     @tree = MT::Tree.new(elements)
   end
 
-  def test_verify
-    assert_equal(true,  @tree.verify(3))
-    assert_equal(true,  @tree.verify('3'))
-    assert_equal(false, @tree.verify(6))
+  def test_include?
+    assert_equal(true,  @tree.include?(3))
+    assert_equal(true,  @tree.include?('3'))
+    assert_equal(false, @tree.include?(6))
   end
 
-  def test_proof
+  def test_audit_proof
     expected = [h('4'), h(h('1') + h('2')), h('5')]
-    assert_equal(expected, @tree.proof('3').map(&:value))
+    assert_equal(expected, @tree.audit_proof(index: 1).map(&:value))
+
+    assert_raises(ArgumentError) { @tree.audit_proof(index: 5) }
   end
 
   def test_root_hash

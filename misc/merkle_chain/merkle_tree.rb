@@ -57,11 +57,10 @@ module MT
       @root.value
     end
 
-    def proof(target)
-      hashed = OpenSSL::Digest::SHA256.hexdigest(target.to_s)
-      leaf = @leaves.find {|l| l.value == hashed }
-
-      return nil if leaf.nil?
+    def audit_proof(index:)
+      if (leaf = @leaves[index]).nil?
+        raise ArgumentError, 'Tree does not have a value you specified by index'
+      end
 
       res = []
       while leaf.parent
@@ -70,15 +69,15 @@ module MT
       end
       res
     end
-    alias audit_paths proof
 
-    def verify(target)
-      return false if (prf = proof(target)).nil?
+    def include?(target_value)
+      hashed = OpenSSL::Digest::SHA256.hexdigest(target_value.to_s)
+      index  = @leaves.find_index {|l| l.value == hashed }
 
-      hashed = OpenSSL::Digest::SHA256.hexdigest(target.to_s)
+      return false if index.nil?
 
       result =
-        prf.reduce(hashed) do |res, node|
+        audit_proof(index: index).reduce(hashed) do |res, node|
           case
           when node.left_sibling
             res = OpenSSL::Digest::SHA256.hexdigest(res + node.value)
@@ -91,7 +90,6 @@ module MT
 
       return result == root_hash
     end
-    alias include? verify
   end
 
   class Node
