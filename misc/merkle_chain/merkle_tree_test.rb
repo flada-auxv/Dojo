@@ -14,9 +14,9 @@ class TestTree < Minitest::Test
   end
 
   def test_verify
-    assert_equal(true,  @tree.verify(target_value: 3))
-    assert_equal(true,  @tree.verify(target_value: '3'))
-    assert_equal(false, @tree.verify(target_value: 6))
+    assert_equal(true,  @tree.verify(3))
+    assert_equal(true,  @tree.verify('3'))
+    assert_equal(false, @tree.verify(6))
   end
 
   def test_proof
