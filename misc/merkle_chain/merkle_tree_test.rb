@@ -63,6 +63,10 @@ class TestTree < Minitest::Test
     )
   end
 
+  def test_root_hash_when_empty
+    assert_equal(h(''), MT::Tree.new.root_hash)
+  end
+
   def test_split_index
     assert_equal(0, MT::Tree.split_index(%w[1 2]))
     assert_equal(1, MT::Tree.split_index(%w[1 2 3]))
