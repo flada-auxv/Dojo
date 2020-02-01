@@ -4,7 +4,7 @@ require 'minitest/autorun'
 require_relative './merkle_tree'
 
 def digest(*val)
-  OpenSSL::Digest::SHA256.digest(Array(val).join)
+  OpenSSL::Digest::SHA256.hexdigest(val.join)
 end
 
 def leaf(val)
@@ -12,24 +12,28 @@ def leaf(val)
 end
 
 def inner(left, right)
-  digest(MT::Node::INNER_PREFIX, left, right)
+  digest(MT::Node::INNER_PREFIX, b(left), b(right))
 end
 
-# ordered = %w[1 2 3 4 5].map {|e| [e, digest("\x00" + e)] }.sort_by {|(o, h)| h }
+def b(val)
+  [val&.to_s].pack('H*')
+end
+
+# ordered = %w[1 2 3 4 5].map {|e| [e, leaf(e)] }.sort_by {|(i, h)| i }
 # ordered.map {|(o, h)| [o, h[..4]] }
-# => [["4", "\x11\xE1\xF5X\""],
-#     ["1", "\"\x15\xE8\xACN"],
-#     ["5", "S0O^?"],
-#     ["3", "\x90l]$\x85"],
-#     ["2", "\xFAa\xE3\xDE\xC3"]]
+# [["1", "2215e"],
+#  ["2", "fa61e"],
+#  ["3", "906c5"],
+#  ["4", "11e1f"],
+#  ["5", "53304"]]
 #
-#    ((4+1)+(5+3))+2 <-- root hash
-#        /          \
-#   (4+1)+(5+3)      2
-#    /       \
-#   4+1     5+3
+#    ((1+2)+(3+4))+5 <-- root hash
+#         /         \
+#   (1+2)+(3+4)      5
+#     /     \
+#   1+2     3+4
 #  /   \   /   \
-# 4     1 5     3
+# 1     2 3     4
 
 class TestTree < Minitest::Test
   def setup
@@ -38,11 +42,11 @@ class TestTree < Minitest::Test
   end
 
   def test_entries_order
-    assert_equal(%w[4 1 5 3 2], @tree.entries.map(&:original_value))
+    assert_equal(%w[1 2 3 4 5], @tree.entries.map(&:original_value))
   end
 
   def test_leaves_order
-    assert_equal(%w[4 1 5 3 2], @tree.leaves.map(&:original_value))
+    assert_equal(%w[1 2 3 4 5], @tree.leaves.map(&:original_value))
   end
 
   def test_include?
@@ -52,7 +56,7 @@ class TestTree < Minitest::Test
   end
 
   def test_audit_proof
-    expected = [leaf('4'), inner(leaf('5'), leaf('3')), leaf('2')]
+    expected = [leaf('1'), inner(leaf('3'), leaf('4')), leaf('5')]
     assert_equal(expected, @tree.audit_proof(index: 1).map(&:value))
   end
 
@@ -70,17 +74,13 @@ class TestTree < Minitest::Test
     assert_equal(
       inner(
         inner(
-          inner(leaf('4'), leaf('1')),
-          inner(leaf('5'), leaf('3'))
+          inner(leaf('1'), leaf('2')),
+          inner(leaf('3'), leaf('4'))
         ),
-        leaf('2')
+        leaf('5')
       ),
       @tree.root_hash
     )
-  end
-
-  def test_root_hash_when_tree_is_empty
-    assert_equal(digest(''), MT::Tree.new.root_hash)
   end
 
   def test_split_index
@@ -131,6 +131,61 @@ class TestTree < Minitest::Test
     assert_equal(true,  root.left.left.right.nil?)
 
     assert_equal(%w[1 2 3], leaves.map(&:original_value))
+  end
+
+  # Following hard-coded values were taken from this project.
+  # https://github.com/google/trillian/blob/v1.3.3/merkle/rfc6962/rfc6962_test.go
+  def test_root_hash_when_its_empty
+    assert_equal(
+      'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+      MT::Tree.new.root_hash
+    )
+  end
+
+  def test_root_hash_when_it_has_empty_leaf
+    assert_equal(
+      '6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d',
+      MT::Tree.new(['']).root_hash
+    )
+  end
+
+  def test_root_hash_when_it_has_one_leaf
+    assert_equal(
+      '395aa064aa4c29f7010acfe3f25db9485bbd4b91897b6ad7ad547639252b4d56',
+      MT::Tree.new(['L123456']).root_hash
+    )
+  end
+
+  def test_with_verified_data
+    tree = MT::Tree.new([
+      b(''),
+      b('00'),
+      b('10'),
+      b('2021'),
+      b('3031'),
+      b('40414243'),
+      b('5051525354555657'),
+      b('606162636465666768696a6b6c6d6e6f')
+    ])
+
+    assert_equal(
+      %w[
+        6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d
+        96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7
+        0298d122906dcfc10892cb53a73992fc5b9f493ea4c9badb27b791b4127a7fe7
+        07506a85fd9dd2f120eb694f86011e5bb4662e5c415a62917033d4a9624487e7
+        bc1a0643b12e4d2d7c77918f44e0f4f79a838b6cf9ec5b5c283e1f4d88599e6b
+        4271a26be0d8a84f0bd54c8c302e7cb3a3b5d1fa6780a40bcce2873477dab658
+        b08693ec2e721597130641e8211e7eedccb4c26413963eee6c1e2ed16ffb1a5f
+        46f6ffadd3d06a09ff3c5860d2755c8b9819db7df44251788c7d8e3180de8eb1
+      ],
+      tree.leaves.map(&:value)
+    )
+
+    assert_equal(
+      '5dc9da79a70659a9ad559cb701ded9a2ab9d823aad2f4960cfe370eff4604328',
+      tree.root_hash
+    )
   end
 end
 
