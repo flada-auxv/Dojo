@@ -8,6 +8,8 @@ module MT
 
     class << self
       def build_root_node_of(values)
+        raise ArgumentError if values.length == 0
+
         if values.length == 1
           leaf = Node.build_as_leaf_node(values[0])
           return leaf, [leaf]
