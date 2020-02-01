@@ -15,10 +15,34 @@ def inner(left, right)
   digest(MT::Node::INNER_PREFIX, left, right)
 end
 
+# ordered = %w[1 2 3 4 5].map {|e| [e, digest("\x00" + e)] }.sort_by {|(o, h)| h }
+# ordered.map {|(o, h)| [o, h[..4]] }
+# => [["4", "\x11\xE1\xF5X\""],
+#     ["1", "\"\x15\xE8\xACN"],
+#     ["5", "S0O^?"],
+#     ["3", "\x90l]$\x85"],
+#     ["2", "\xFAa\xE3\xDE\xC3"]]
+#
+#    ((4+1)+(5+3))+2 <-- root hash
+#        /          \
+#   (4+1)+(5+3)      2
+#    /       \
+#   4+1     5+3
+#  /   \   /   \
+# 4     1 5     3
+
 class TestTree < Minitest::Test
   def setup
     elements = %w[1 2 3 4 5]
     @tree = MT::Tree.new(elements)
+  end
+
+  def test_entries_order
+    assert_equal(%w[4 1 5 3 2], @tree.entries.map(&:original_value))
+  end
+
+  def test_leaves_order
+    assert_equal(%w[4 1 5 3 2], @tree.leaves.map(&:original_value))
   end
 
   def test_include?
@@ -28,7 +52,7 @@ class TestTree < Minitest::Test
   end
 
   def test_audit_proof
-    expected = [leaf('4'), inner(leaf('1'), leaf('2')), leaf('5')]
+    expected = [leaf('4'), inner(leaf('5'), leaf('3')), leaf('2')]
     assert_equal(expected, @tree.audit_proof(index: 1).map(&:value))
   end
 
@@ -43,28 +67,13 @@ class TestTree < Minitest::Test
   end
 
   def test_root_hash
-    # %w(1 2 3 4 5).map {|a| [a, OpenSSL::Digest::SHA256.hexdigest(a)] }.sort_by{|(a, b)| b }
-    # => [["4", "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a"],
-    #     ["3", "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"],
-    #     ["1", "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"],
-    #     ["2", "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"],
-    #     ["5", "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d"]]
-    #
-    #    ((4+3)+(1+2))+5 <-- root hash
-    #        /          \
-    #   (4+3)+(1+2)      5
-    #    /       \
-    #   4+3     1+2
-    #  /   \   /   \
-    # 4     3 1     2
-
     assert_equal(
       inner(
         inner(
-          inner(leaf('4'), leaf('3')),
-          inner(leaf('1'), leaf('2'))
+          inner(leaf('4'), leaf('1')),
+          inner(leaf('5'), leaf('3'))
         ),
-        leaf('5')
+        leaf('2')
       ),
       @tree.root_hash
     )
