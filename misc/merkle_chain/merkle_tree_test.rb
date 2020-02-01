@@ -60,12 +60,12 @@ class TestTree < Minitest::Test
     # 4     3 1     2
 
     assert_equal(
-      digest(
-        digest(
-          digest(digest(4), digest(3)),
-          digest(digest(1), digest(2))
+      inner(
+        inner(
+          inner(leaf('4'), leaf('3')),
+          inner(leaf('1'), leaf('2'))
         ),
-        digest(5)
+        leaf('5')
       ),
       @tree.root_hash
     )
@@ -101,9 +101,9 @@ class TestTree < Minitest::Test
 
   def test_build_tree_of
     root, leaves = MT::Tree.build_tree_of([
-      MT::Node.build_as_leaf_node(1),
-      MT::Node.build_as_leaf_node(2),
-      MT::Node.build_as_leaf_node(3)
+      MT::Node.build_as_leaf_node('1'),
+      MT::Node.build_as_leaf_node('2'),
+      MT::Node.build_as_leaf_node('3')
     ])
 
     assert_equal(true,  root.root?)
@@ -122,13 +122,13 @@ class TestTree < Minitest::Test
     assert_equal(true,  root.left.left.left.nil?)
     assert_equal(true,  root.left.left.right.nil?)
 
-    assert_equal([1, 2, 3], leaves.map(&:original_value))
+    assert_equal(%w[1 2 3], leaves.map(&:original_value))
   end
 end
 
 class TestMerkleNode < Minitest::Test
   def test_root?
-    leaf = MT::Node.build_as_leaf_node(1)
+    leaf = MT::Node.build_as_leaf_node('1')
 
     assert_equal(false, leaf.root?)
 
@@ -141,22 +141,22 @@ class TestMerkleNode < Minitest::Test
   end
 
   def test_value_when_its_a_leaf_node
-    assert_equal(leaf(2), MT::Node.build_as_leaf_node(2).value)
+    assert_equal(leaf(2), MT::Node.build_as_leaf_node('2').value)
   end
 
   def test_value_when_its_an_intermediate_node
     node = MT::Node.build_as_intermediate_node(
-      left: MT::Node.build_as_leaf_node(2),
-      right: MT::Node.build_as_leaf_node(3)
+      left: MT::Node.build_as_leaf_node('2'),
+      right: MT::Node.build_as_leaf_node('3')
     )
-    assert_equal(inner(leaf(2), leaf(3)), node.value)
+    assert_equal(inner(leaf('2'), leaf('3')), node.value)
   end
 
   def test_value_when_its_an_intermediate_node_which_only_has_a_left_child
     node = MT::Node.build_as_intermediate_node(
-      left: MT::Node.build_as_leaf_node(2),
+      left: MT::Node.build_as_leaf_node('2'),
       right: nil
     )
-    assert_equal(inner(leaf(2), nil), node.value)
+    assert_equal(inner(leaf('2'), nil), node.value)
   end
 end
