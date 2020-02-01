@@ -7,18 +7,18 @@ module MT
     attr_reader :root, :leaves, :entries
 
     class << self
-      def build_root_node_of(values)
-        raise ArgumentError if values.length == 0
+      def build_tree_of(nodes)
+        raise ArgumentError if nodes.length == 0
 
-        if values.length == 1
-          leaf = Node.build_as_leaf_node(values[0])
+        if nodes.length == 1
+          leaf = nodes[0]
           return leaf, [leaf]
         end
 
-        left, right = split_by_power_of_two(values)
+        left, right = split_by_power_of_two(nodes)
 
-        left_root, left_nodes = build_root_node_of(left)
-        right_root, right_nodes = build_root_node_of(right)
+        left_root, left_nodes = build_tree_of(left)
+        right_root, right_nodes = build_tree_of(right)
 
         parent = Node.build_as_intermediate_node(left: left_root, right: right_root)
 
@@ -47,10 +47,10 @@ module MT
 
       @entries =
         entries.
-          map {|e| OpenSSL::Digest::SHA256.hexdigest(e) }.
-          sort_by {|v| [v, i += 1] }
+          map {|e| Node.build_as_leaf_node(e) }.
+          sort_by {|v| [v.value, i += 1] }
 
-      @root, @leaves = self.class.build_root_node_of(@entries)
+      @root, @leaves = self.class.build_tree_of(@entries)
     end
 
     def root_hash
@@ -71,7 +71,7 @@ module MT
     end
 
     def include?(target_value)
-      hashed = OpenSSL::Digest::SHA256.hexdigest(target_value.to_s)
+      hashed = Node.leaf_hash(target_value.to_s)
       index  = @leaves.find_index {|l| l.value == hashed }
 
       return false if index.nil?
@@ -80,9 +80,9 @@ module MT
         audit_proof(index: index).reduce(hashed) do |res, node|
           case
           when node.left_sibling
-            res = OpenSSL::Digest::SHA256.hexdigest(res + node.value)
+            res = Node.inner_hash(res, node.value)
           when node.right_sibling
-            res = OpenSSL::Digest::SHA256.hexdigest(node.value + res)
+            res = Node.inner_hash(node.value, res)
           else
             break
           end
@@ -93,36 +93,49 @@ module MT
   end
 
   class Node
-    attr_accessor :leaf_value, :left, :right, :parent, :left_sibling, :right_sibling
+    LEAF_PREFIX  = ["0"].pack("H*")
+    INNER_PREFIX = ["1"].pack("H*")
 
-    LeafPrefix = ""
+    attr_reader :original_value
+    attr_accessor :leaf, :value, :left, :right, :parent, :left_sibling, :right_sibling
 
     class << self
-      def build_as_leaf_node(leaf_value)
-        new(leaf_value: leaf_value)
+      def build_as_leaf_node(value)
+        new(leaf: true, value: value)
       end
 
       def build_as_intermediate_node(left:, right:)
-        new(left: left, right: right)
+        new(leaf: false, left: left, right: right)
+      end
+
+      def leaf_hash(value)
+        digest(LEAF_PREFIX, value)
+      end
+
+      def inner_hash(left_value, right_value)
+        digest(INNER_PREFIX, left_value, right_value)
+      end
+
+      def digest(*val)
+        OpenSSL::Digest::SHA256.digest(val.join)
       end
     end
 
-    def initialize(leaf_value: nil, left: nil, right: nil)
-      @leaf_value = leaf_value
-      @left       = left
-      @right      = right
+    def initialize(leaf: false, value: nil, left: nil, right: nil)
+      @leaf = leaf
+
+      if leaf?
+        @original_value = value
+        @value = self.class.leaf_hash(value)
+      else
+        @left  = left
+        @right = right
+        @value = self.class.inner_hash(left.value, right&.value)
+      end
     end
 
-    def value
-      return @leaf_value if leaf?
-
-      raise StandardError if @left.nil?
-
-      OpenSSL::Digest::SHA256.hexdigest([@left&.value, @right&.value].join)
-    end
-
-    def sibling
-      left_sibling || right_sibling
+    def leaf?
+      @leaf
     end
 
     def root?
@@ -133,8 +146,8 @@ module MT
       !leaf? && !@parent.nil?
     end
 
-    def leaf?
-      !!@leaf_value
+    def sibling
+      left_sibling || right_sibling
     end
 
     def add(node, to:)

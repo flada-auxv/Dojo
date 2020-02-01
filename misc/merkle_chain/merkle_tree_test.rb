@@ -3,8 +3,16 @@
 require 'minitest/autorun'
 require_relative './merkle_tree'
 
-def h(*val)
-  OpenSSL::Digest::SHA256.hexdigest(Array(val).map(&:to_s).reduce(&:+))
+def digest(*val)
+  OpenSSL::Digest::SHA256.digest(Array(val).join)
+end
+
+def leaf(val)
+  digest(MT::Node::LEAF_PREFIX, val)
+end
+
+def inner(left, right)
+  digest(MT::Node::INNER_PREFIX, left, right)
 end
 
 class TestTree < Minitest::Test
@@ -20,7 +28,7 @@ class TestTree < Minitest::Test
   end
 
   def test_audit_proof
-    expected = [h('4'), h(h('1') + h('2')), h('5')]
+    expected = [leaf('4'), inner(leaf('1'), leaf('2')), leaf('5')]
     assert_equal(expected, @tree.audit_proof(index: 1).map(&:value))
   end
 
@@ -35,7 +43,7 @@ class TestTree < Minitest::Test
   end
 
   def test_root_hash
-    # 1,2,3,4,5のhash化されたデータをソートして入力とするので、h(4),h(3),h(1),h(2),h(5) の順番に並ぶことになる
+    # 1,2,3,4,5のhash化されたデータをソートして入力とするので、digest(4),digest(3),digest(1),digest(2),digest(5) の順番に並ぶことになる
     # %w(1 2 3 4 5).map {|a| [a, OpenSSL::Digest::SHA256.hexdigest(a)] }.sort_by{|(a, b)| b }
     # => [["4", "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a"],
     #     ["3", "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"],
@@ -52,19 +60,19 @@ class TestTree < Minitest::Test
     # 4     3 1     2
 
     assert_equal(
-      h(
-        h(
-          h(h(4), h(3)),
-          h(h(1), h(2))
+      digest(
+        digest(
+          digest(digest(4), digest(3)),
+          digest(digest(1), digest(2))
         ),
-        h(5)
+        digest(5)
       ),
       @tree.root_hash
     )
   end
 
-  def test_root_hash_when_empty
-    assert_equal(h(''), MT::Tree.new.root_hash)
+  def test_root_hash_when_tree_is_empty
+    assert_equal(digest(''), MT::Tree.new.root_hash)
   end
 
   def test_split_index
@@ -91,8 +99,12 @@ class TestTree < Minitest::Test
     )
   end
 
-  def test_build_root_node_of
-    root, leaves = MT::Tree.build_root_node_of(%w[1 2 3])
+  def test_build_tree_of
+    root, leaves = MT::Tree.build_tree_of([
+      MT::Node.build_as_leaf_node(1),
+      MT::Node.build_as_leaf_node(2),
+      MT::Node.build_as_leaf_node(3)
+    ])
 
     assert_equal(true,  root.root?)
     assert_equal(true,  root.parent.nil?)
@@ -110,40 +122,41 @@ class TestTree < Minitest::Test
     assert_equal(true,  root.left.left.left.nil?)
     assert_equal(true,  root.left.left.right.nil?)
 
-    assert_equal(%w[1 2 3], leaves.map(&:value))
+    assert_equal([1, 2, 3], leaves.map(&:original_value))
   end
 end
 
 class TestMerkleNode < Minitest::Test
-  def test_add
-    root = MT::Node.new(leaf_value: '1')
-    left_child = MT::Node.new(leaf_value: '2')
-    root.add(left_child, to: :left)
-
-    assert_equal(left_child.leaf_value, root.left.leaf_value)
-  end
-
   def test_root?
-    assert_equal(true, MT::Node.new.root?)
+    leaf = MT::Node.build_as_leaf_node(1)
+
+    assert_equal(false, leaf.root?)
+
+    root = MT::Node.build_as_intermediate_node(
+      left: leaf,
+      right: leaf
+    )
+
+    assert_equal(true, root.root?)
   end
 
   def test_value_when_its_a_leaf_node
-    assert_equal(h(2), MT::Node.build_as_leaf_node(h(2)).value)
+    assert_equal(leaf(2), MT::Node.build_as_leaf_node(2).value)
   end
 
   def test_value_when_its_an_intermediate_node
-    node1 = MT::Node.build_as_intermediate_node(
-      left: MT::Node.build_as_leaf_node(h(2)),
-      right: MT::Node.build_as_leaf_node(h(3))
+    node = MT::Node.build_as_intermediate_node(
+      left: MT::Node.build_as_leaf_node(2),
+      right: MT::Node.build_as_leaf_node(3)
     )
-    assert_equal(h(h(2) + h(3)), node1.value)
+    assert_equal(inner(leaf(2), leaf(3)), node.value)
   end
 
   def test_value_when_its_an_intermediate_node_which_only_has_a_left_child
     node = MT::Node.build_as_intermediate_node(
-      left: MT::Node.build_as_leaf_node(h(2)),
+      left: MT::Node.build_as_leaf_node(2),
       right: nil
     )
-    assert_equal(h(h(2)), node.value)
+    assert_equal(inner(leaf(2), nil), node.value)
   end
 end
