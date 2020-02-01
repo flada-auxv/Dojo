@@ -8,7 +8,7 @@ module MT
 
     class << self
       def build_tree_of(nodes)
-        raise ArgumentError if nodes.length == 0
+        return nil, [] if nodes.length == 0
 
         if nodes.length == 1
           leaf = nodes[0]
@@ -42,7 +42,7 @@ module MT
       end
     end
 
-    def initialize(entries = [''])
+    def initialize(entries = [])
       i = 0 # for stable-sort
 
       @entries =
@@ -54,7 +54,7 @@ module MT
     end
 
     def root_hash
-      @root.value
+      @root&.value || Node.digest("")
     end
 
     def audit_proof(index:)
