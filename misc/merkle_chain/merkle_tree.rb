@@ -54,12 +54,12 @@ module MT
     end
 
     def root_hash
-      @root&.value || Node.digest("")
+      @root&.value || Node.digest('')
     end
 
     def audit_proof(index:)
       if index.negative? || (leaf = @leaves[index]).nil?
-        raise ArgumentError, "Tree does not have a value you specified by index"
+        raise ArgumentError, 'Tree does not have a value you specified by index'
       end
 
       res = []
