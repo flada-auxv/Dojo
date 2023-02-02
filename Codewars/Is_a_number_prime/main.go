@@ -1,24 +1,10 @@
-package main
+package kata
 
 import (
 	"errors"
 	"fmt"
 	"math"
 )
-
-func main() {
-	fmt.Println("************", -1, IsPrime(-1))
-	fmt.Println("************", 0, IsPrime(0))
-	fmt.Println("************", 1, IsPrime(1))
-	fmt.Println("************", 2, IsPrime(2))
-	fmt.Println("************", 3, IsPrime(3))
-	fmt.Println("************", 4, IsPrime(4))
-	fmt.Println("************", 5, IsPrime(5))
-	fmt.Println("************", 6, IsPrime(6))
-	fmt.Println("************", 75, IsPrime(75))
-	fmt.Println("************", 101, IsPrime(101))
-	fmt.Println("************", 100000000, IsPrime(100000000))
-}
 
 func IsPrime(n int) bool {
 	var primes []int
