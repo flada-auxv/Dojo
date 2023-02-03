@@ -20,14 +20,16 @@ func TestIsPrime(t *testing.T) {
 		{"9 is not a prime number", args{9}, false},
 		{"1105 is not a prime number", args{1105}, false},
 		{"512463 is not a prime number", args{512463}, false},
-		// {"8635844967113809 is not a prime number", args{8635844967113809}, false},
 		{"2 is a prime number", args{2}, true},
 		{"3 is a prime number", args{3}, true},
 		{"5 is a prime number", args{5}, true},
 		{"7 is a prime number", args{7}, true},
 		{"557 is a prime number", args{557}, true},
 		{"99991 is a prime number", args{99991}, true},
-		// {"9007199254740997 is a prime number", args{9007199254740997}, true},
+		{"974431 is a prime number", args{974431}, true},
+		{"3158213 is a prime number", args{3158213}, true},
+		{"43124519 is a prime number", args{43124519}, true},
+		// {"546489557 is a prime number", args{546489557}, true}, FIXME: takes too much time...
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

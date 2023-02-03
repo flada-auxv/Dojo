@@ -6,8 +6,8 @@ import (
 )
 
 func IsPrime(n int) bool {
-	return IsPrimeRecursion(n)
-	// return IsPrimeIteration(n)
+	// return IsPrimeRecursion(n)
+	return IsPrimeIteration(n)
 }
 
 func IsPrimeIteration(n int) bool {
