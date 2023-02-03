@@ -7,6 +7,51 @@ import (
 )
 
 func IsPrime(n int) bool {
+	return IsPrimeRecursion(n)
+	// return IsPrimeIteration(n)
+}
+
+func IsPrimeIteration(n int) bool {
+	if n < 2 {
+		return false
+	}
+
+	// omit 0 and 1 then start at 2 with 0 index
+	sieve := make([]bool, n-1)
+
+	for i := range sieve {
+		sieve[i] = true
+	}
+
+	for mp := 2; ; {
+		multiples, err := getMultiples(mp, n)
+		if err != nil {
+			panic(err)
+		}
+		for _, v := range multiples {
+			sieve[v-2] = false
+		}
+
+		if float64(mp) > math.Sqrt(float64(n)) {
+			break
+		}
+
+		for i, v := range sieve {
+			if i > mp-2 && v == true {
+				mp = i + 2
+				break
+			}
+		}
+	}
+
+	return sieve[n-2]
+}
+
+func IsPrimeRecursion(n int) bool {
+	if n < 2 {
+		return false
+	}
+
 	var primes []int
 	sieve := make([]bool, n+1)
 
