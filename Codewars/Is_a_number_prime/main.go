@@ -2,7 +2,6 @@ package kata
 
 import (
 	"errors"
-	"fmt"
 	"math"
 )
 
@@ -81,8 +80,6 @@ func IsPrimeRecursion(n int) bool {
 }
 
 func crossOut(prime int, limit int, sieve []bool) []bool {
-	fmt.Printf("\nprime: %v, limit: %v", prime, limit)
-
 	_sieve := append([]bool{}, sieve...)
 
 	multiples, err := getMultiples(prime, limit)
