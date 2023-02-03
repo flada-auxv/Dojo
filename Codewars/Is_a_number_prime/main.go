@@ -60,7 +60,7 @@ func crossOut(prime int, limit int, sieve []bool) []bool {
 		return sieve
 	}
 
-	if prime > int(math.Ceil(math.Sqrt(float64(limit)))) {
+	if float64(prime) > math.Sqrt(float64(limit)) {
 		return sieve
 	}
 
