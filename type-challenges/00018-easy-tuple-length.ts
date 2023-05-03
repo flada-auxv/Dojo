@@ -20,6 +20,7 @@ type cases = [
 ];
 
 // ============= Your Code Here =============
-type Length<T extends readonly any[]> = T["length"] extends number
-  ? T["length"]
-  : never;
+// type Length<T extends readonly any[]> = T["length"] extends number
+//   ? T["length"]
+//   : never;
+type Length<T extends readonly any[]> = T["length"];
